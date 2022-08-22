@@ -1,0 +1,54 @@
+# History files
+.Rhistory
+.Rapp.history
+# Session Data files
+*.RData
+*.rdata
+*.log
+# Example code in package build process
+*-Ex.R
+# Output files from R CMD build
+/*.tar.gz
+# Output files from R CMD check
+/*.Rcheck/
+# RStudio files
+.Rproj.user/
+# produced vignettes
+vignettes/*.html
+vignettes/*.pdf
+# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
+.httr-oauth
+# knitr and R markdown default cache directories
+/*_cache/
+/cache/
+# Temporary files created by R markdown
+*.utf8.md
+*.knit.md
+.Rproj.user
+*.Rproj
+*.Rout
+*.md
+*.spin.R
+*.spin.Rmd
+# Local configuration
+local
+local.config.R
+# Files that should be dynamically generated as needed
+*.docx
+!template.docx # Except for template.docx
+*.pdf
+*.tex
+*.html
+# Other temp files
+.~lock.*#
+.out
+.logfile
+./scripts/.rio_installed
+./scripts/.tidbits_installed
+*bak
+*_files
+# We don't commit data unless we really mean it.
+*.csv
+*.tsv
+*.rda
+*.xlsx
