@@ -25,7 +25,6 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 .Rproj.user
-*.Rproj
 *.Rout
 *.md
 *.spin.R
