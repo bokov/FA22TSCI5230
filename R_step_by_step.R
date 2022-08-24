@@ -1,5 +1,5 @@
 #'---
-#' title: "TSCI 5050: Introduction to Data Science"
+#' title: "TSCI 5230: Introduction to Data Science"
 #' author: 'Author One ^1^, Author Two ^1^'
 #' abstract: |
 #'  | Provide a summary of objectives, study design, setting, participants,
