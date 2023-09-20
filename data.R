@@ -68,6 +68,7 @@ sapply(admissions[,democolumns], function(x) x %>% unique() %>% length())
 admissions %>% group_by(subject_id) %>%  summarise(across(any_of(democolumns), length_unique))
 #" # Demongraphic table
 
+library(stringr)
 demographics = admissions %>% group_by(subject_id) %>%
   summarise(across(any_of(democolumns), unique_values)
             ,decease = any(!is.na(deathtime))
@@ -79,4 +80,44 @@ demographics = admissions %>% group_by(subject_id) %>%
 
 demographics[is.infinite(demographics$deathtime), "deathtime"] = NA
 
-demographics %>% left_join(patients[,c("subject_id", "gender","anchor_age")])
+demographics = demographics %>% left_join(patients[,c("subject_id", "gender","anchor_age")])
+
+
+library(DataExplorer)
+library(explore)
+explore_shiny(demographics)
+d_items %>% subset(linksto != "chartevents")
+d_items$linksto %>% table()
+named_outputevents =  outputevents %>% left_join(d_items, by = c('itemid' = 'itemid'))
+explore::explore(name_outputevents)
+
+DataExplorer::create_report(name_outputevents)
+DataExplorer::create_report(demographics)
+table(demographics$decease)
+
+named_labevents = labevents %>% left_join(d_labitems, by = c('itemid' = 'itemid'))
+named_chartevents = chartevents %>% left_join(d_items, by = c('itemid' = 'itemid'))
+named_inputevents = inputevents %>% left_join(d_items, by = c('itemid' = 'itemid'))
+named_icd = diagnoses_icd %>% left_join(d_icd_diagnoses)
+named_icd$long_title %>% table() %>% sort(decreasing = T) %>% t() %>% View()
+
+table(named_labevents$flag, named_labevents$label) %>% as.data.frame() %>% View()
+with(named_labevents,table(flag, label))  %>% as.data.frame() %>% View()
+
+# lab/glucose, A1c, diagnosis/hypoglycemia,  death, icu stay, length of stay
+
+admissions %>% group_by(subject_id) %>% summarise(ham = length(hadm_id))
+admissions %>% select(subject_id, hadm_id, admittime, dischtime) %>% transmute()
+
+# create a scaffold of admission dates
+adm_table = admissions %>% transmute( hadm_id = hadm_id, subject_id = subject_id,
+                                      los = ceiling(as.numeric(dischtime - admittime) / 24),
+                          date = purrr::map2(admittime,dischtime, function(xx,yy) seq(trunc(xx,units = 'days'),yy, by = 'day'))
+                          ) %>% tidyr::unnest(date)
+
+# # add stay_id (present if stay in ICU and NA if not) to scaffold
+
+
+ICU_scaffold = icustays %>% transmute( hadm_id = hadm_id, subject_id = subject_id,
+                                         date = purrr::map2(intime,dischtime, function(xx,yy) seq(trunc(xx,units = 'days'),yy, by = 'day'))
+) %>% tidyr::unnest(date)
