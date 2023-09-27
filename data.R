@@ -110,7 +110,7 @@ admissions %>% group_by(subject_id) %>% summarise(ham = length(hadm_id))
 admissions %>% select(subject_id, hadm_id, admittime, dischtime) %>% transmute()
 
 # create a scaffold of admission dates
-adm_table = admissions %>% transmute( hadm_id = hadm_id, subject_id = subject_id,
+adm_scaffold = admissions %>% transmute( hadm_id = hadm_id, subject_id = subject_id,
                                       los = ceiling(as.numeric(dischtime - admittime) / 24),
                           date = purrr::map2(admittime,dischtime, function(xx,yy) seq(trunc(xx,units = 'days'),yy, by = 'day'))
                           ) %>% tidyr::unnest(date)
@@ -118,6 +118,14 @@ adm_table = admissions %>% transmute( hadm_id = hadm_id, subject_id = subject_id
 # # add stay_id (present if stay in ICU and NA if not) to scaffold
 
 
-ICU_scaffold = icustays %>% transmute( hadm_id = hadm_id, subject_id = subject_id,
-                                         date = purrr::map2(intime,dischtime, function(xx,yy) seq(trunc(xx,units = 'days'),yy, by = 'day'))
-) %>% tidyr::unnest(date)
+ICU_scaffold = icustays %>% transmute( hadm_id, subject_id , stay_id , ICU_los = los,
+                                       ICU_los_revised = ceiling(as.numeric(outtime - intime) / 1440),
+                                         ICU_date = purrr::map2(intime,outtime, function(xx,yy) seq(trunc(xx,units = 'days'),yy, by = 'day'))
+) %>% tidyr::unnest(ICU_date) %>%
+  group_by(hadm_id, subject_id , ICU_date) %>% summarise(stay_id = list(stay_id),
+                                                         ICU_los = list(ICU_los))
+main_data = adm_scaffold %>% left_join(ICU_scaffold, by = c("hadm_id", "subject_id", 'date' = 'ICU_date'))
+
+p = c('E11649|E162')
+sub_table = named_icd %>% subset(str_detect(icd_code,p))
+
