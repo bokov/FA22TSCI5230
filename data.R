@@ -35,6 +35,7 @@ library(dplyr); # table manipulation
 library(fs);    # file system operations
 
 options(max.print=42);
+options(datatable.na.strings=c('NA','NULL',''));
 panderOptions('table.split.table',Inf); panderOptions('table.split.cells',Inf);
 # download data
 if(!file.exists('data.R.rdata')){
@@ -61,6 +62,8 @@ length_unique = function(x) unique(x) %>% length()
 
 unique_values = function(x) unique(x) %>% sort() %>% paste(sep = '_',collapse = ':')
 
+count_by_freq = . %>% summarise(n=n(),patients=length_unique(subject_id)) %>% arrange(desc(n))
+
 # vectorize running it by col
 sapply(admissions[,democolumns], function(x) x %>% unique() %>% length())
 
@@ -85,15 +88,15 @@ demographics = demographics %>% left_join(patients[,c("subject_id", "gender","an
 
 library(DataExplorer)
 library(explore)
-explore_shiny(demographics)
-d_items %>% subset(linksto != "chartevents")
-d_items$linksto %>% table()
+# explore_shiny(demographics)
+# d_items %>% subset(linksto != "chartevents")
+# d_items$linksto %>% table()
 named_outputevents =  outputevents %>% left_join(d_items, by = c('itemid' = 'itemid'))
-explore::explore(name_outputevents)
+# explore::explore(name_outputevents)
 
-DataExplorer::create_report(name_outputevents)
-DataExplorer::create_report(demographics)
-table(demographics$decease)
+# DataExplorer::create_report(name_outputevents)
+# DataExplorer::create_report(demographics)
+# table(demographics$decease)
 
 named_labevents = labevents %>% left_join(d_labitems, by = c('itemid' = 'itemid'))
 named_chartevents = chartevents %>% left_join(d_items, by = c('itemid' = 'itemid'))
@@ -124,8 +127,48 @@ ICU_scaffold = icustays %>% transmute( hadm_id, subject_id , stay_id , ICU_los =
 ) %>% tidyr::unnest(ICU_date) %>%
   group_by(hadm_id, subject_id , ICU_date) %>% summarise(stay_id = list(stay_id),
                                                          ICU_los = list(ICU_los))
-main_data = adm_scaffold %>% left_join(ICU_scaffold, by = c("hadm_id", "subject_id", 'date' = 'ICU_date'))
+
+htn_adm = named_icd %>%  subset(str_detect(tolower(long_title),'hypertension')) %>%
+  pull(hadm_id) %>% unique()
+
 
 p = c('E11649|E162')
-sub_table = named_icd %>% subset(str_detect(icd_code,p))
+hpgcm_adm = named_icd %>% subset(str_detect(icd_code,p)) %>% pull(hadm_id) %>% unique()
+
+# hpgcm_adm = named_icd %>%  subset(str_detect(tolower(long_title),'hypertension')) %>%
+#   pull(hadm_id) %>% unique()
+
+main_data = adm_scaffold %>% left_join(ICU_scaffold, by = c("hadm_id", "subject_id", 'date' = 'ICU_date')) %>%
+  mutate(hypertention = subject_id %in% htn_adm,
+         hypoglycemia = hadm_id %in% hpgcm_adm)
+
+named_labevents %>% group_by(category,fluid,loinc_code,label) %>%
+  summarize(n=n(),
+            patients=length_unique(subject_id)) %>%
+  arrange(desc(n)) %>% View()
+
+
+pH_table = named_labevents %>% mutate( charttime = as.Date(charttime)) %>%
+  filter(itemid == 50820) %>%
+  group_by(subject_id, charttime) %>% summarise(pH = min(valuenum),
+                                                # flag = !any(between(valuenum, ref_range_lower, ref_range_upper)),
+                                                pH_flag = any(flag=='abnormal')
+                                                ) %>%  arrange(desc(pH))
+
+# main_data$pH[is.na(main_data$pH)] = 7.4
+vital_abrev<-c(HR="Heart Rate",aSBP="Arterial Blood Pressure systolic",   mSBP="Manual Blood Pressure Systolic Left")
+
+
+analytic_events = named_chartevents %>% mutate( charttime = as.Date(charttime))  %>%
+  group_by(label, subject_id, charttime) %>%
+  filter(label %in% vital_abrev) %>%
+  summarise(median_value = median(valuenum, na.rm = T)) %>%
+  tidyr::pivot_wider(values_from = median_value, names_from = label ) %>% rename(vital_abrev) %>% View()
+
+
+
+main_data = main_data %>%
+  left_join(pH_table, by = c('subject_id', 'date' = 'charttime')) %>%
+  left_join(analytic_events, by = c('subject_id', 'date' = 'charttime')) %>%
+  left_join(demographics)
 
