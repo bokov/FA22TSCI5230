@@ -37,6 +37,9 @@ library(fs);    # file system operations
 options(max.print=42);
 options(datatable.na.strings=c('NA','NULL',''));
 panderOptions('table.split.table',Inf); panderOptions('table.split.cells',Inf);
+
+starting_names = ls()
+
 # download data
 if(!file.exists('data.R.rdata')){
   #' # Import the data
@@ -52,9 +55,14 @@ if(!file.exists('data.R.rdata')){
   print('Downloaded')
 }else{
   print('File exists')
+  # Zipped_Data <- file.path("data",'tempdata.zip');
+  # Unzipped_Data <- unzip(Zipped_Data,exdir = 'data') %>% grep('gz$',.,val=T);
+  # Table_Names <- path_ext_remove(Unzipped_Data) %>% fs::path_ext_remove() %>% basename;
+  load(file = "data.R.rdata")
+  Table_Names = setdiff(ls(), c(starting_names,'starting_names'))
+
 }
 
-load(file = "data.R.rdata")
 
 democolumns = c('subject_id','insurance', 'marital_status', 'ethnicity')
 
@@ -163,7 +171,7 @@ analytic_events = named_chartevents %>% mutate( charttime = as.Date(charttime)) 
   group_by(label, subject_id, charttime) %>%
   filter(label %in% vital_abrev) %>%
   summarise(median_value = median(valuenum, na.rm = T)) %>%
-  tidyr::pivot_wider(values_from = median_value, names_from = label ) %>% rename(vital_abrev) %>% View()
+  tidyr::pivot_wider(values_from = median_value, names_from = label ) %>% rename(vital_abrev)
 
 
 
@@ -171,4 +179,18 @@ main_data = main_data %>%
   left_join(pH_table, by = c('subject_id', 'date' = 'charttime')) %>%
   left_join(analytic_events, by = c('subject_id', 'date' = 'charttime')) %>%
   left_join(demographics)
+
+
+library(googleAuthR)
+library(bigQueryR)
+
+# Authorization
+# googleAuthR::gar_cache_empty()
+# googleAuthR::gar_set_client("/Users/xingyu/Desktop/FA22TSCI5230/client_secret_959833717950-rk30n9msv2fdpllf174mtgpkphc5on8r.apps.googleusercontent.com.json")
+# Add testing user with email address in google `OA consent screen` first
+# bqr_auth(email = "meteor123sanctity@gmail.com")
+
+Starting_names
+
+bqr_upload_data()
 

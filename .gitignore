@@ -52,3 +52,5 @@ local.config.R
 *.rda
 *.xlsx
 data/
+*.apps.googleusercontent.com.json
+*.png
