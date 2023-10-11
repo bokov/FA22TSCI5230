@@ -23,6 +23,7 @@
 # This part does not show up in your rendered report, only in the script,
 # because we are using regular comments instead of #' comments
 debug <- 0;
+upload_to_google = 1
 knitr::opts_chunk$set(echo=debug>-1, warning=debug>0, message=debug>0);
 
 library(ggplot2); # visualisation
@@ -183,14 +184,18 @@ main_data = main_data %>%
 
 library(googleAuthR)
 library(bigQueryR)
-
+if(upload_to_google){
 # Authorization
-# googleAuthR::gar_cache_empty()
-# googleAuthR::gar_set_client("/Users/xingyu/Desktop/FA22TSCI5230/client_secret_959833717950-rk30n9msv2fdpllf174mtgpkphc5on8r.apps.googleusercontent.com.json")
+googleAuthR::gar_cache_empty()
+googleAuthR::gar_set_client("/Users/xingyu/Desktop/FA22TSCI5230/client_secret_959833717950-rk30n9msv2fdpllf174mtgpkphc5on8r.apps.googleusercontent.com.json")
 # Add testing user with email address in google `OA consent screen` first
-# bqr_auth(email = "meteor123sanctity@gmail.com")
+bqr_auth(email = "meteor123sanctity@gmail.com")
 
-Starting_names
 
-bqr_upload_data()
+bqr_upload_data("potent-bulwark-401719", 'ICU_Admissions_Data', Table_Names[2], get(Table_Names[2]))
 
+for (i in 3:length(Table_Names)) {
+  bqr_upload_data("potent-bulwark-401719", 'ICU_Admissions_Data', Table_Names[i], get(Table_Names[i]))
+
+}
+}
