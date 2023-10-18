@@ -50,9 +50,9 @@ if(!file.exists('data.R.rdata')){
   download.file(Input_Data,destfile = Zipped_Data);
   Unzipped_Data <- unzip(Zipped_Data,exdir = 'data') %>% grep('gz$',.,val=T);
   Table_Names <- path_ext_remove(Unzipped_Data) %>% fs::path_ext_remove() %>% basename;
-  for(ii in seq_along(Unzipped_Data)) assign(Table_Names[ii],import(Unzipped_Data[ii],format='csv'));
+  for(ii in seq_along(Unzipped_Data)) assign(Table_Names[ii],import(Unzipped_Data[ii],format='csv',fread = FALSE));
   #mapply(function(aa,bb) assign(aa,import(bb,format='csv'),inherits = T),Table_Names,Unzipped_Data)
-  save(list=Table_Names,file='data.R.rdata');
+  save(list=c(Table_Names,'Table_Names'),file='data.R.rdata');
   print('Downloaded')
 }else{
   print('File exists')
@@ -194,7 +194,7 @@ bqr_auth(email = "meteor123sanctity@gmail.com")
 
 bqr_upload_data("potent-bulwark-401719", 'ICU_Admissions_Data', Table_Names[2], get(Table_Names[2]))
 
-for (i in 3:length(Table_Names)) {
+for (i in 26:length(Table_Names)) {
   bqr_upload_data("potent-bulwark-401719", 'ICU_Admissions_Data', Table_Names[i], get(Table_Names[i]))
 
 }
