@@ -34,6 +34,12 @@ library(printr); # automatically invoke pander when tables are detected
 library(broom); # standardized, enhanced views of various objects
 library(dplyr); # table manipulation
 library(fs);    # file system operations
+library(stringr);
+library(DataExplorer);
+library(explore);
+library(googleAuthR);
+library(bigQueryR);
+
 
 options(max.print=42);
 options(datatable.na.strings=c('NA','NULL',''));
@@ -56,12 +62,8 @@ if(!file.exists('data.R.rdata')){
   print('Downloaded')
 }else{
   print('File exists')
-  # Zipped_Data <- file.path("data",'tempdata.zip');
-  # Unzipped_Data <- unzip(Zipped_Data,exdir = 'data') %>% grep('gz$',.,val=T);
-  # Table_Names <- path_ext_remove(Unzipped_Data) %>% fs::path_ext_remove() %>% basename;
   load(file = "data.R.rdata")
   Table_Names = setdiff(ls(), c(starting_names,'starting_names'))
-
 }
 
 
@@ -80,7 +82,6 @@ sapply(admissions[,democolumns], function(x) x %>% unique() %>% length())
 admissions %>% group_by(subject_id) %>%  summarise(across(any_of(democolumns), length_unique))
 #" # Demongraphic table
 
-library(stringr)
 demographics = admissions %>% group_by(subject_id) %>%
   summarise(across(any_of(democolumns), unique_values)
             ,decease = any(!is.na(deathtime))
@@ -95,8 +96,6 @@ demographics[is.infinite(demographics$deathtime), "deathtime"] = NA
 demographics = demographics %>% left_join(patients[,c("subject_id", "gender","anchor_age")])
 
 
-library(DataExplorer)
-library(explore)
 # explore_shiny(demographics)
 # d_items %>% subset(linksto != "chartevents")
 # d_items$linksto %>% table()
@@ -182,8 +181,6 @@ main_data = main_data %>%
   left_join(demographics)
 
 
-library(googleAuthR)
-library(bigQueryR)
 if(upload_to_google){
 # Authorization
 googleAuthR::gar_cache_empty()
